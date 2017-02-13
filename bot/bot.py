@@ -191,9 +191,9 @@ class Bithdayer(object):
             "Sono il bot di Race UP<br>" +
             "Ti scrivo per augurarti buon compleanno " + user_name + "!<br>" +
             "Ti scrivo anche per ricordarti di portare almeno una torta il prossimo sabato " + next_meeting_date + " in OZ!<br>" +
-            "Mi raccomando, sii generoso: Gigetto è stato istruito a prendere provvedimenti in caso di dimenticanze.<br>"
-            "Ricordati di portare torte in quantità sufficiente per sfamare l'intero team: chi verrà sgammato a non provvedere sufficientemente alla fame generale,<br>"
-            "verrà impalato nella pubblica piazza dell'OZ.<br>"
+            "Mi raccomando! Non dimenticarti: Gigetto è stato istruito a prendere provvedimenti in caso di negligenza.<br>" +
+            "Ricordati di portare torte in quantità sufficiente per sfamare l'intero team: chi verrà sgammato a non provvedere sufficientemente alla fame generale,<br>" +
+            "verrà impalato nella pubblica piazza dell'OZ.<br>" +
             "Sperando di mangiare più di una fetta,<br>" +
             "<br>" +
             "<i>Il bot delle torte</i><br>" +
@@ -237,7 +237,7 @@ class Bithdayer(object):
             "Sono il bot di Race UP<br>" +
             "Qualcosa mi dice che compi gli anni in questa settimana, giusto?<br>" +
             "Ti scrivo anche per ricordarti di portare almeno una torta il prossimo sabato " + next_meeting_date + " in OZ!<br>" +
-            "Mi raccomando, sii generoso: Gigetto è stato istruito a prendere provvedimenti in caso di dimenticanze.<br>"
+            "Mi raccomando! Non dimenticarti: Gigetto è stato istruito a prendere provvedimenti in caso di negligenza.<br>" +
             "Ricordati di portare torte in quantità sufficiente per sfamare l'intero team: chi verrà sgammato a non provvedere sufficientemente alla fame generale,<br>"
             "verrà impalato nella pubblica piazza dell'OZ.<br>" +
             "Sperando di mangiare più di una fetta,<br>" +
