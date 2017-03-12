@@ -141,12 +141,12 @@ class Bithdayer(object):
                 print("\tSending birthday message to " + self.email)
             msg = self._get_birthday_msg()  # message to send
             self._send_me_msg(msg)
-
-        if self._do_i_turn_this_week():
-            if DEBUG:
-                print("\tSending week birthday message to " + self.email)
-            msg = self._get_week_msg()  # message to send
-            self._send_me_msg(msg)
+        else:
+            if self._do_i_turn_this_week():
+                if DEBUG:
+                    print("\tSending week birthday message to " + self.email)
+                msg = self._get_week_msg()  # message to send
+                self._send_me_msg(msg)
 
     def _do_i_turn_today(self):
         """
