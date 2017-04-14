@@ -1,6 +1,6 @@
 # Happy Birthday RaceUP + cake reminder
 
-*Reminds RaceUP team members to bring cake on weekly saturday meetings*
+*Reminds RaceUP team members to bring cake on weekly saturday meetings.*
 
 
 ## Install
