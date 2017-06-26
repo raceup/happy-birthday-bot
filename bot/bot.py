@@ -132,8 +132,9 @@ class Bithdayer(object):
 
     def notify_me_in_case_of_birthday(self):
         """
-        :return: void
-            Sends me a message if today is my birthday
+        :return: bool
+            Sends me a message if today is my birthday.
+            Returns true iff sent message
         """
 
         if self._do_i_turn_today():
@@ -141,12 +142,15 @@ class Bithdayer(object):
                 print("\tSending birthday message to " + self.email)
             msg = self._get_birthday_msg()  # message to send
             self._send_me_msg(msg)
-        else:
-            if self._do_i_turn_this_week():
-                if DEBUG:
-                    print("\tSending week birthday message to " + self.email)
-                msg = self._get_week_msg()  # message to send
-                self._send_me_msg(msg)
+            return True
+        elif self._do_i_turn_this_week():
+            if DEBUG:
+                print("\tSending week birthday message to " + self.email)
+            msg = self._get_week_msg()  # message to send
+            self._send_me_msg(msg)
+            return True
+
+        return False  # message not sent
 
     def _do_i_turn_today(self):
         """
@@ -292,11 +296,14 @@ class Bot(object):
         """
 
         list_of_birthdays = HbDataParser.parse(DATA_FILE_PATH)
+        birthdays_count = 0
         for b in list_of_birthdays:
             birthdayer = Bithdayer(b)  # parse raw csv data
             print("Checking " + birthdayer.email + " for birthday")
-            birthdayer.notify_me_in_case_of_birthday()
-        print("Done")
+            if birthdayer.notify_me_in_case_of_birthday():
+                birthdays_count += 1
+
+        print("Sent", birthdays_count, "notifications")
 
 
 if __name__ == '__main__':
