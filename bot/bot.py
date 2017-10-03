@@ -139,13 +139,21 @@ class Bithdayer(object):
 
         if self._do_i_turn_today():
             if DEBUG:
-                print("\tSending birthday message to " + self.email)
+                print(
+                    "\tSending birthday message to " +
+                    self.email +
+                    " (turns today!)"
+                )
             msg = self._get_birthday_msg()  # message to send
             self._send_me_msg(msg)
             return True
         elif self._do_i_turn_this_week():
             if DEBUG:
-                print("\tSending week birthday message to " + self.email)
+                print(
+                    "\tSending birthday message to " +
+                    self.email +
+                    " (turns " + str(self.day) + "/" + str(self.month) + ")"
+                )
             msg = self._get_week_msg()  # message to send
             self._send_me_msg(msg)
             return True
