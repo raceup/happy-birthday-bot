@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 0.2.2 - 2017-10-05
+
+### Fixed
+- 'monday' checker
+
 ## 0.2.1 - 2017-02-11
 
 ### Fixed

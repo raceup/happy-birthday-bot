@@ -26,6 +26,7 @@ from google import gauthenticator
 DATA_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_FILE_PATH = os.path.join(DATA_FILE_PATH, "data.csv")
 DEBUG = True
+NOW = datetime.datetime.now()
 
 
 class Utils(object):
@@ -36,9 +37,8 @@ class Utils(object):
             Date of this week's saturday
         """
 
-        now = datetime.datetime.now()
-        t = datetime.timedelta(- now.weekday() - 1)  # time delta to last sunday
-        return now + t
+        t = datetime.timedelta(- NOW.weekday() - 1)  # time D to last sunday
+        return NOW + t
 
     @staticmethod
     def get_date_of_this_week_sunday():
@@ -47,9 +47,10 @@ class Utils(object):
             Date of this week's monday
         """
 
-        now = datetime.datetime.now()
-        t = datetime.timedelta((13 - now.weekday()) % 7)  # time delta to this monday
-        return now + t
+        t = datetime.timedelta(
+            (13 - NOW.weekday()) % 7
+        )  # time delta to this monday
+        return NOW + t
 
     @staticmethod
     def get_date_of_next_meeting():
@@ -58,9 +59,10 @@ class Utils(object):
             Day, month and year of next team meeting
         """
 
-        now = datetime.datetime.now()
-        t = datetime.timedelta((12 - now.weekday()) % 7)  # time delta to next meeting (saturday)
-        next_meeting = now + t
+        t = datetime.timedelta(
+            (12 - NOW.weekday()) % 7
+        )  # time delta to next meeting (saturday)
+        next_meeting = NOW + t
 
         return {
             "day": next_meeting.day,
@@ -166,8 +168,7 @@ class Bithdayer(object):
             True iff object's birthday is today
         """
 
-        now = datetime.datetime.now()
-        return now.month == self.month and now.day == self.day
+        return NOW.month == self.month and NOW.day == self.day
 
     def _do_i_turn_this_week(self):
         """
@@ -176,12 +177,22 @@ class Bithdayer(object):
         """
 
         last_week_sunday = Utils.get_date_of_last_week_sunday()
-        last_week_sunday = datetime.datetime(last_week_sunday.year, last_week_sunday.month, last_week_sunday.day)
+        last_week_sunday = datetime.datetime(last_week_sunday.year,
+                                             last_week_sunday.month,
+                                             last_week_sunday.day)
 
-        this_year_birthday = datetime.datetime(datetime.datetime.now().year, self.birthday.month, self.birthday.day)
+        this_year_birthday = datetime.datetime(
+            NOW.year,
+            self.birthday.month,
+            self.birthday.day
+        )
 
         this_week_sunday = Utils.get_date_of_this_week_sunday()
-        this_week_sunday = datetime.datetime(this_week_sunday.year, this_week_sunday.month, this_week_sunday.day)
+        this_week_sunday = datetime.datetime(
+            this_week_sunday.year,
+            this_week_sunday.month,
+            this_week_sunday.day
+        )
 
         return last_week_sunday <= this_year_birthday < this_week_sunday
 
@@ -193,7 +204,8 @@ class Bithdayer(object):
 
         user_name = self.name + " " + self.surname
         next_meeting_date = Utils.get_date_of_next_meeting()
-        next_meeting_date = str(next_meeting_date["day"]) + "/" + str(next_meeting_date["month"]) + "/" + str(
+        next_meeting_date = str(next_meeting_date["day"]) + "/" + str(
+            next_meeting_date["month"]) + "/" + str(
             next_meeting_date["year"])
 
         message = MIMEText(
@@ -239,7 +251,8 @@ class Bithdayer(object):
 
         user_name = self.name + " " + self.surname
         next_meeting_date = Utils.get_date_of_next_meeting()
-        next_meeting_date = str(next_meeting_date["day"]) + "/" + str(next_meeting_date["month"]) + "/" + str(
+        next_meeting_date = str(next_meeting_date["day"]) + "/" + str(
+            next_meeting_date["month"]) + "/" + str(
             next_meeting_date["year"])
 
         message = MIMEText(
@@ -314,5 +327,18 @@ class Bot(object):
         print("Sent", birthdays_count, "notifications")
 
 
+def main():
+    """
+    :return: void
+        Checks if today is right day to send email notifications, then sends them
+    """
+
+    today_str = NOW.strftime('%A').lower()
+    if "mon" in today_str:  # this is a monday
+        Bot.run()  # launch bot
+    else:
+        print("Today is not monday! No send no email!")
+
+
 if __name__ == '__main__':
-    Bot.run()
+    main()
