@@ -19,6 +19,7 @@
 import base64
 import csv
 import datetime
+import json
 import os
 from email.mime.text import MIMEText
 
@@ -32,7 +33,7 @@ DATA_FOLDER = os.path.join(THIS_FOLDER, "data")
 ADDRESSES_FILE = os.path.join(DATA_FOLDER, "addresses.csv")
 LOCK_FILE = os.path.join(DATA_FOLDER, "config.json")
 EMAIL_SENDER = "bot@raceup.it"
-TODAY = NOW.strftime('%A').lower()
+TODAY = NOW.strftime('%A').lower()  # day
 
 
 class Birthday(object):
@@ -130,7 +131,9 @@ class Birthday(object):
 class AppLock(object):
     """ Checks if app can proceed; generates lock """
 
-    def __init__(self, lock_file):
+    DATETIME_FORMAT = "%Y-%m-%d %H:%S:%M"
+
+    def __init__(self, lock_file=LOCK_FILE):
         """
         :param lock_file: str
             Path to lock file
@@ -138,6 +141,60 @@ class AppLock(object):
 
         object.__init__(self)
         self.lock_file = lock_file
+        self.update_interval = 7
+        self.last_update = datetime.datetime.fromtimestamp(0)
+        self.data = None
+        self.parse_lock()
+
+    def set_update_interval(self, days=7):
+        """
+        :param days: int
+            Days between 2 consecutive app updates
+        :return: void
+            Sets app interval update
+        """
+
+        self.update_interval = days
+
+    def can_proceed(self):
+        """
+        :return: bool
+            True iff app is not locked and time since last update < app
+            update interval
+        """
+
+        return NOW >= self.last_update + datetime.timedelta(
+            days=self.update_interval)
+
+    def parse_lock(self):
+        """
+        :return: {}
+            Details about last update
+        """
+
+        try:
+            with open(self.lock_file, "r") as reader:
+                data = json.loads(reader.read())
+                self.last_update = datetime.datetime.strptime(
+                    data["last_update"],
+                    AppLock.DATETIME_FORMAT
+                )
+        except:  # malformed lock file
+            self.write_lock(last_update=datetime.datetime.fromtimestamp(0))
+            self.parse_lock()
+
+    def write_lock(self, last_update=NOW):
+        """
+        :return: void
+            Writes lock file
+        """
+
+        data = {
+            "last_update": last_update.strftime(AppLock.DATETIME_FORMAT)
+        }
+
+        with open(self.lock_file, "w") as writer:
+            json.dump(data, writer)
 
 
 def parse_data_file(in_file=ADDRESSES_FILE):
@@ -173,14 +230,19 @@ def send_desktop_notifications(birthdays):
         Sends desktop notification about the birthdays
     """
 
+    counter = 0
     if birthdays:
         for b in birthdays:
             app_notify(
                 str(b.birthday_str) + " >> " + b.name + " " + b.surname
                 + " notified"
             )
+            counter += 1
     else:
         app_notify("No birthdays this week!")
+    app_notify(
+        "Sent " + str(counter) + " emails"
+    )
 
 
 def main():
@@ -189,9 +251,15 @@ def main():
         Checks if today is right day to send email notifications, then sends them
     """
 
-    send_desktop_notifications(
-        send_emails()
-    )
+    app_lock = AppLock()
+    if app_lock.can_proceed():
+        send_desktop_notifications(
+            send_emails()
+        )
+
+        app_lock.write_lock()
+    else:
+        app_notify("Already updated on " + str(app_lock.last_update))
 
 
 if __name__ == '__main__':

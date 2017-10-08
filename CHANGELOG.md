@@ -7,8 +7,9 @@ All notable changes to this project will be documented in this file.
 - now using template .txt files for email text
 
 ### Added
-- app lock class (started)
+- app lock
 - desktop notification
+- notification on how many emails have been sent
 
 ### Removed
 - bot class
