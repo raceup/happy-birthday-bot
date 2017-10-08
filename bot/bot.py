@@ -19,6 +19,7 @@
 import base64
 import datetime
 import os
+import subprocess
 from email.mime.text import MIMEText
 
 from google import gauthenticator
@@ -27,6 +28,35 @@ DATA_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_FILE_PATH = os.path.join(DATA_FILE_PATH, "data.csv")
 DEBUG = True
 NOW = datetime.datetime.now()
+APP_NAME = "Race Up | Happy Birthday"
+
+
+def send_notification(app_name, message):
+    """
+    :param app_name: str
+        Name of app to show
+    :param message: str
+        Details of app to show
+    :return: void
+        Shows notifications to screen
+    """
+
+    subprocess.call([
+        "notify-send",
+        str(app_name),
+        str(message)
+    ])
+
+
+def app_notify(message):
+    """
+    :param message: str
+        Message to display in notification
+    :return: void
+        Shows notifications to screen
+    """
+
+    send_notification(APP_NAME, message)
 
 
 class Utils(object):
@@ -114,7 +144,7 @@ class HbDataParser(object):
         }
 
 
-class Bithdayer(object):
+class Birthday(object):
     """ Birthdayer data """
 
     def __init__(self, raw_dict):
@@ -306,25 +336,35 @@ class Bithdayer(object):
         ).execute()  # send message
 
 
-class Bot(object):
-    """ Notify birthdayer """
+def run():
+    """
+    :return: void
+        Run bot
+    """
 
-    @staticmethod
-    def run():
-        """
-        :return: void
-            Run bot
-        """
+    birthdays = HbDataParser.parse(DATA_FILE_PATH)
+    for b in birthdays:
+        birthday = Birthday(b)  # parse raw csv data
+        if birthday.notify_me_in_case_of_birthday():
+            yield birthday
 
-        list_of_birthdays = HbDataParser.parse(DATA_FILE_PATH)
-        birthdays_count = 0
-        for b in list_of_birthdays:
-            birthdayer = Bithdayer(b)  # parse raw csv data
-            print("Checking " + birthdayer.email + " for birthday")
-            if birthdayer.notify_me_in_case_of_birthday():
-                birthdays_count += 1
 
-        print("Sent", birthdays_count, "notifications")
+def notify_birthdays(birthdays):
+    """
+    :param birthdays: [] of Birthday
+        List of birthday to send notification to desktop
+    :return: void
+        Sends desktop notification about the birthdays
+    """
+
+    if birthdays:
+        for b in birthdays:
+            app_notify(
+                str(b.birthday) + " >>> " + b.name + " " + b.surname
+                + " notified"
+            )
+    else:
+        app_notify("No birthdays this week!")
 
 
 def main():
@@ -335,9 +375,10 @@ def main():
 
     today_str = NOW.strftime('%A').lower()
     if "mon" in today_str:  # this is a monday
-        Bot.run()  # launch bot
+        birthdays = run()  # launch bot
+        notify_birthdays(birthdays)
     else:
-        print("Today is not monday! No send no email!")
+        app_notify("Today is not monday! No need to send any email!")
 
 
 if __name__ == '__main__':
