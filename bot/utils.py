@@ -16,6 +16,7 @@
 # limitations under the License.
 
 
+import socket
 import subprocess
 
 from google import gauthenticator
@@ -66,3 +67,23 @@ def send_email(sender, msg):
         userId=sender,
         body=msg
     ).execute()  # send message
+
+
+def is_internet_on(host="8.8.8.8", port=53, timeout=3):
+    """
+    :param host: str
+        Google-public-dns-a.google.com
+    :param port: int
+        53/tcp
+    :param timeout: int
+        Seconds
+    :return: bool
+        True iff machine has internet connection
+    """
+
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except:
+        return False

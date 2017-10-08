@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 - desktop notification
 - notification on how many emails have been sent
 
+### Fixed
+- check on internet connection
+
 ### Removed
 - bot class
 

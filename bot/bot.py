@@ -21,12 +21,13 @@ import csv
 import datetime
 import json
 import os
+import time
 from email.mime.text import MIMEText
 
 from dateutils import NOW, get_date_of_last_week_sunday, \
     get_date_of_this_week_sunday, get_date_of_next_meeting
 from emailutils import get_email_header, get_email_content, get_email_footer
-from utils import app_notify, send_email
+from utils import app_notify, send_email, is_internet_on
 
 THIS_FOLDER = os.path.dirname(os.path.realpath(__file__))
 DATA_FOLDER = os.path.join(THIS_FOLDER, "data")
@@ -245,6 +246,27 @@ def send_desktop_notifications(birthdays):
     )
 
 
+def wait_until_internet(time_between_attempts=3, max_attempts=10):
+    """
+    :param time_between_attempts: int
+        Seconds between 2 consecutive attempts
+    :param max_attempts: int
+        Max number of attempts to try
+    :return: bool
+        True iff there is internet connection
+    """
+
+    counter = 0
+    while not is_internet_on():
+        time.sleep(time_between_attempts)  # wait until internet is on
+        counter += 1
+
+        if counter > max_attempts:
+            return False
+
+    return True
+
+
 def main():
     """
     :return: void
@@ -253,11 +275,14 @@ def main():
 
     app_lock = AppLock()
     if app_lock.can_proceed():
-        send_desktop_notifications(
-            send_emails()
-        )
+        if wait_until_internet():
+            send_desktop_notifications(
+                send_emails()
+            )
 
-        app_lock.write_lock()
+            app_lock.write_lock()
+        else:
+            app_notify("Cannot connect to Internet >> Aborting")
     else:
         app_notify("Already updated on " + str(app_lock.last_update))
 
