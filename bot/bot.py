@@ -63,7 +63,7 @@ class Birthday(object):
             Returns true iff sent message
         """
 
-        if self.do_i_turn_this_week():
+        if self.is_in_this_week():
             send_email(
                 EMAIL_SENDER,
                 self.get_msg()
@@ -72,7 +72,7 @@ class Birthday(object):
 
         return False
 
-    def do_i_turn_this_week(self):
+    def is_in_this_week(self):
         """
         :return: bool
             True iff I turn this week
@@ -131,7 +131,7 @@ class Birthday(object):
 class AppLock(object):
     """ Checks if app can proceed; generates lock """
 
-    DATETIME_FORMAT = "%Y-%m-%d %H:%S:%M"
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     def __init__(self, lock_file=LOCK_FILE):
         """

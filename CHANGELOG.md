@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - check on internet connection
+- next/last sunday date
+- app lock date format (min <-> sec)
 
 ### Removed
 - bot class
