@@ -31,7 +31,7 @@ THIS_FOLDER = os.path.dirname(os.path.realpath(__file__))
 DATA_FOLDER = os.path.join(THIS_FOLDER, "data")
 ADDRESSES_FILE = os.path.join(DATA_FOLDER, "addresses.csv")
 LOCK_FILE = os.path.join(DATA_FOLDER, "config.json")
-EMAIL_SENDER = "bot.raceup@gmail.com"
+EMAIL_SENDER = "bot@raceup.it"
 TODAY = NOW.strftime('%A').lower()
 
 
