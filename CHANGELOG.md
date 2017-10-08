@@ -1,10 +1,22 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 0.2.3 - 2017-10-08
+
+### Refactored
+- now using template .txt files for email text
+
+### Added
+- app lock class (started)
+- desktop notification
+
+### Removed
+- bot class
+
 ## 0.2.2 - 2017-10-05
 
 ### Fixed
-- 'monday' checker
+- `monday` checker
 
 ## 0.2.1 - 2017-02-11
 
