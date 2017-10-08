@@ -18,24 +18,31 @@
 
 import datetime
 
+SUNDAY_WEEKDAY = 7 - 1
 NOW = datetime.datetime.now()
 
 
-def get_date_of_last_week_sunday():
+def get_last_sunday_date():
     """
     :return: datetime
         Date of this week's saturday
     """
 
+    if NOW.weekday() == SUNDAY_WEEKDAY:
+        return NOW
+
     t = datetime.timedelta(- NOW.weekday() - 1)  # time D to last sunday
     return NOW + t
 
 
-def get_date_of_this_week_sunday():
+def get_next_sunday_date():
     """
     :return: datetime
         Date of this week's monday
     """
+
+    if NOW.weekday() == SUNDAY_WEEKDAY:
+        return NOW + datetime.timedelta(days=7)
 
     t = datetime.timedelta(
         (13 - NOW.weekday()) % 7
@@ -43,7 +50,7 @@ def get_date_of_this_week_sunday():
     return NOW + t
 
 
-def get_date_of_next_meeting():
+def get_next_meeting_date():
     """
     :return: {}
         Day, month and year of next team meeting

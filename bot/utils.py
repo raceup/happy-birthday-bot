@@ -18,6 +18,7 @@
 
 import socket
 import subprocess
+import time
 
 from google import gauthenticator
 
@@ -87,3 +88,24 @@ def is_internet_on(host="8.8.8.8", port=53, timeout=3):
         return True
     except:
         return False
+
+
+def wait_until_internet(time_between_attempts=3, max_attempts=10):
+    """
+    :param time_between_attempts: int
+        Seconds between 2 consecutive attempts
+    :param max_attempts: int
+        Max number of attempts to try
+    :return: bool
+        True iff there is internet connection
+    """
+
+    counter = 0
+    while not is_internet_on():
+        time.sleep(time_between_attempts)  # wait until internet is on
+        counter += 1
+
+        if counter > max_attempts:
+            return False
+
+    return True

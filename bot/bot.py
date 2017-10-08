@@ -21,13 +21,12 @@ import csv
 import datetime
 import json
 import os
-import time
 from email.mime.text import MIMEText
 
-from dateutils import NOW, get_date_of_last_week_sunday, \
-    get_date_of_this_week_sunday, get_date_of_next_meeting
+from dateutils import NOW, get_last_sunday_date, \
+    get_next_sunday_date, get_next_meeting_date
 from emailutils import get_email_header, get_email_content, get_email_footer
-from utils import app_notify, send_email, is_internet_on
+from utils import app_notify, send_email, wait_until_internet
 
 THIS_FOLDER = os.path.dirname(os.path.realpath(__file__))
 DATA_FOLDER = os.path.join(THIS_FOLDER, "data")
@@ -79,27 +78,27 @@ class Birthday(object):
             True iff I turn this week
         """
 
-        last_week_sunday = get_date_of_last_week_sunday()
-        last_week_sunday = datetime.datetime(
-            last_week_sunday.year,
-            last_week_sunday.month,
-            last_week_sunday.day
+        last_sunday = get_last_sunday_date()
+        last_sunday = datetime.datetime(
+            last_sunday.year,
+            last_sunday.month,
+            last_sunday.day
         )  # avoid dealing with 24:00
 
-        this_year_birthday = datetime.datetime(
+        birthday = datetime.datetime(
             NOW.year,
             self.birthday.month,
             self.birthday.day
         )
 
-        this_week_sunday = get_date_of_this_week_sunday()
-        this_week_sunday = datetime.datetime(
-            this_week_sunday.year,
-            this_week_sunday.month,
-            this_week_sunday.day
+        next_sunday = get_next_sunday_date()
+        next_sunday = datetime.datetime(
+            next_sunday.year,
+            next_sunday.month,
+            next_sunday.day
         )  # avoid dealing with 24:00
 
-        return last_week_sunday < this_year_birthday <= this_week_sunday
+        return last_sunday <= birthday < next_sunday
 
     def get_msg(self):
         """
@@ -108,7 +107,7 @@ class Birthday(object):
         """
 
         name_surname = self.name + " " + self.surname
-        next_meeting_date = get_date_of_next_meeting()
+        next_meeting_date = get_next_meeting_date()
         next_meeting_date = str(next_meeting_date["day"]) + "/" + str(
             next_meeting_date["month"]) + "/" + str(
             next_meeting_date["year"])
@@ -244,27 +243,6 @@ def send_desktop_notifications(birthdays):
     app_notify(
         "Sent " + str(counter) + " emails"
     )
-
-
-def wait_until_internet(time_between_attempts=3, max_attempts=10):
-    """
-    :param time_between_attempts: int
-        Seconds between 2 consecutive attempts
-    :param max_attempts: int
-        Max number of attempts to try
-    :return: bool
-        True iff there is internet connection
-    """
-
-    counter = 0
-    while not is_internet_on():
-        time.sleep(time_between_attempts)  # wait until internet is on
-        counter += 1
-
-        if counter > max_attempts:
-            return False
-
-    return True
 
 
 def main():
