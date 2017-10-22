@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 0.1.6 - 2017-10-22
+
+### Refactored
+- using pyhal mail sender module
+
 ## 0.2.3 - 2017-10-08
 
 ### Refactored

@@ -16,13 +16,21 @@
 # limitations under the License.
 
 
+import os
 import socket
 import subprocess
 import time
 
-from google import gauthenticator
+from hal.internet import gmail
 
 APP_NAME = "Race Up | Happy Birthday"
+THIS_FOLDER = os.path.dirname(os.path.realpath(__file__))
+OAUTH_FOLDER = os.path.join(THIS_FOLDER, ".user_credentials", "gmail")
+EMAIL_DRIVER = gmail.GMailApiOAuth(
+    "Race Up Viral",
+    os.path.join(OAUTH_FOLDER, "client_secret.json"),
+    os.path.join(OAUTH_FOLDER, "gmail.json")
+).create_driver()
 
 
 def send_notification(app_name, message):
@@ -63,11 +71,11 @@ def send_email(sender, msg):
         Sends email to me with this message
     """
 
-    service = gauthenticator.create_gmail_driver()
-    service.users().messages().send(
-        userId=sender,
-        body=msg
-    ).execute()  # send message
+    gmail.send_email(
+        sender,
+        msg,
+        EMAIL_DRIVER
+    )
 
 
 def is_internet_on(host="8.8.8.8", port=53, timeout=3):
