@@ -16,18 +16,17 @@
 # limitations under the License.
 
 
-import base64
 import csv
 import datetime
 import os
-from email.mime.text import MIMEText
 
-from emailutils import get_email_header, get_email_content, get_email_footer
-from hal.internet import gmail
+from hal.internet.email import gmail
+from hal.internet.email.templates import EmailTemplate
 from hal.internet.utils import wait_until_internet
 from hal.streams.notify.desktop import send_notification
 from hal.time import dates
 from hal.time.cron import AppCronLock
+from hal.time.dates import get_next_weekday, Weekday
 
 # script settings
 THIS_FOLDER = os.path.dirname(os.path.realpath(__file__))
@@ -48,6 +47,47 @@ EMAIL_DRIVER = gmail.GMailApiOAuth(
     os.path.join(OAUTH_FOLDER, "gmail.json")
 ).create_driver()
 EMAIL_SENDER = "bot@raceup.it"
+EMAIL_HEADER_FILE = os.path.join(DATA_FOLDER, "email_header.txt")
+EMAIL_CONTENT_FILE = os.path.join(DATA_FOLDER, "email_content.txt")
+EMAIL_FOOTER_FILE = os.path.join(DATA_FOLDER, "email_footer.txt")
+
+
+class CakeRemainder(EmailTemplate):
+    """ Email template to notify Race Up members to bring a slice of cake
+    on weekly saturday meetings """
+
+    def __init__(self, recipient, content_file, footer_file, extra_args=None):
+        """
+        :param recipient: str
+            Name and surname of email recipient
+        :param content_file: str
+            Path to file containing email actual content
+        :param footer_file: str
+            Path to file containing email footer (ending)
+        :param extra_args: {}
+            Details about next meeting date
+        """
+
+        EmailTemplate.__init__(
+            self,
+            recipient,
+            "Race Up | Il bot delle torte",
+            content_file,
+            footer_file,
+            extra_args=extra_args
+        )
+
+    def get_email_header(self):
+        """
+        :return: str
+            Email header
+        """
+
+        date_remainder = get_next_weekday(Weekday.SATURDAY)
+        text = "<h2>Ciao " + str(self.recipient).title() + "!</h2><br>"
+        text += "<br>Ti scrivo per ricordarti di portare almeno una torta "
+        text += " il prossimo sabato " + str(date_remainder) + " in OZ!<br>"
+        return text
 
 
 class Birthday(object):
@@ -67,7 +107,6 @@ class Birthday(object):
         self.month = int(self.raw_dict["Month"])
         self.year = int(self.raw_dict["Year"])
         self.birthday = datetime.datetime(self.year, self.month, self.day)
-        self.birthday_str = self.birthday.strftime("%A %d %B")
         self.email = str(self.raw_dict["Email"])
 
     def send_msg(self):
@@ -93,26 +132,15 @@ class Birthday(object):
             Personalized message to notify of birthday
         """
 
-        name_surname = self.name + " " + self.surname
-        next_meeting_date = dates.get_next_weekday(dates.Weekday.SATURDAY)
-        next_meeting_date = str(next_meeting_date["day"]) + "/" + str(
-            next_meeting_date["month"]) + "/" + str(
-            next_meeting_date["year"])
+        name_surname = self.name.strip() + " " + self.surname.strip()
+        name_surname = name_surname.title()
+        email_template = CakeRemainder(
+            name_surname,
+            EMAIL_CONTENT_FILE,
+            EMAIL_FOOTER_FILE
+        )
 
-        message = MIMEText(
-            "<html>" +
-            get_email_header(name_surname) +
-            get_email_content(next_meeting_date) +
-            get_email_footer() +
-            "</html>", "html"
-        )  # create message
-
-        message["to"] = self.email  # email recipient
-        message["subject"] = "Il bot delle torte | remainder"
-
-        return {
-            "raw": base64.urlsafe_b64encode(message.as_bytes()).decode()
-        }
+        return email_template.get_mime_message()
 
 
 def parse_data_file(in_file=ADDRESSES_FILE):
