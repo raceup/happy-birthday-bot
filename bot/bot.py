@@ -19,21 +19,35 @@
 import base64
 import csv
 import datetime
-import json
 import os
 from email.mime.text import MIMEText
 
-from dateutils import NOW, get_last_sunday_date, \
-    get_next_sunday_date, get_next_meeting_date
 from emailutils import get_email_header, get_email_content, get_email_footer
-from utils import app_notify, send_email, wait_until_internet
+from hal.internet import gmail
+from hal.internet.utils import wait_until_internet
+from hal.streams.notify.desktop import send_notification
+from hal.time import dates
+from hal.time.cron import AppCronLock
 
+# script settings
 THIS_FOLDER = os.path.dirname(os.path.realpath(__file__))
 DATA_FOLDER = os.path.join(THIS_FOLDER, "data")
+OAUTH_FOLDER = os.path.join(THIS_FOLDER, ".user_credentials", "gmail")
 ADDRESSES_FILE = os.path.join(DATA_FOLDER, "addresses.csv")
 LOCK_FILE = os.path.join(DATA_FOLDER, "config.json")
-EMAIL_SENDER = "bot@raceup.it"
+
+# date settings
+NOW = datetime.datetime.now()
 TODAY = NOW.strftime('%A').lower()  # day
+
+# email settings
+APP_NAME = "Race Up | Happy Birthday"
+EMAIL_DRIVER = gmail.GMailApiOAuth(
+    "Race Up Viral",
+    os.path.join(OAUTH_FOLDER, "client_secret.json"),
+    os.path.join(OAUTH_FOLDER, "gmail.json")
+).create_driver()
+EMAIL_SENDER = "bot@raceup.it"
 
 
 class Birthday(object):
@@ -63,42 +77,15 @@ class Birthday(object):
             Returns true iff sent message
         """
 
-        if self.is_in_this_week():
-            send_email(
-                EMAIL_SENDER,
-                self.get_msg()
-            )
-            return True
+        if dates.is_in_this_week(self.birthday):
+            try:
+                send_email(self.get_msg())
+                return True
+            except Exception as e:
+                print("Cannot send email because\n", str(e), "\n")
+                return False
 
         return False
-
-    def is_in_this_week(self):
-        """
-        :return: bool
-            True iff I turn this week
-        """
-
-        last_sunday = get_last_sunday_date()
-        last_sunday = datetime.datetime(
-            last_sunday.year,
-            last_sunday.month,
-            last_sunday.day
-        )  # avoid dealing with 24:00
-
-        birthday = datetime.datetime(
-            NOW.year,
-            self.birthday.month,
-            self.birthday.day
-        )
-
-        next_sunday = get_next_sunday_date()
-        next_sunday = datetime.datetime(
-            next_sunday.year,
-            next_sunday.month,
-            next_sunday.day
-        )  # avoid dealing with 24:00
-
-        return last_sunday <= birthday < next_sunday
 
     def get_msg(self):
         """
@@ -107,7 +94,7 @@ class Birthday(object):
         """
 
         name_surname = self.name + " " + self.surname
-        next_meeting_date = get_next_meeting_date()
+        next_meeting_date = dates.get_next_weekday(dates.Weekday.SATURDAY)
         next_meeting_date = str(next_meeting_date["day"]) + "/" + str(
             next_meeting_date["month"]) + "/" + str(
             next_meeting_date["year"])
@@ -128,75 +115,6 @@ class Birthday(object):
         }
 
 
-class AppLock(object):
-    """ Checks if app can proceed; generates lock """
-
-    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-    def __init__(self, lock_file=LOCK_FILE):
-        """
-        :param lock_file: str
-            Path to lock file
-        """
-
-        object.__init__(self)
-        self.lock_file = lock_file
-        self.update_interval = 7
-        self.last_update = datetime.datetime.fromtimestamp(0)
-        self.data = None
-        self.parse_lock()
-
-    def set_update_interval(self, days=7):
-        """
-        :param days: int
-            Days between 2 consecutive app updates
-        :return: void
-            Sets app interval update
-        """
-
-        self.update_interval = days
-
-    def can_proceed(self):
-        """
-        :return: bool
-            True iff app is not locked and time since last update < app
-            update interval
-        """
-
-        return NOW >= self.last_update + datetime.timedelta(
-            days=self.update_interval)
-
-    def parse_lock(self):
-        """
-        :return: {}
-            Details about last update
-        """
-
-        try:
-            with open(self.lock_file, "r") as reader:
-                data = json.loads(reader.read())
-                self.last_update = datetime.datetime.strptime(
-                    data["last_update"],
-                    AppLock.DATETIME_FORMAT
-                )
-        except:  # malformed lock file
-            self.write_lock(last_update=datetime.datetime.fromtimestamp(0))
-            self.parse_lock()
-
-    def write_lock(self, last_update=NOW):
-        """
-        :return: void
-            Writes lock file
-        """
-
-        data = {
-            "last_update": last_update.strftime(AppLock.DATETIME_FORMAT)
-        }
-
-        with open(self.lock_file, "w") as writer:
-            json.dump(data, writer)
-
-
 def parse_data_file(in_file=ADDRESSES_FILE):
     """
     :return: [] of {}
@@ -207,6 +125,43 @@ def parse_data_file(in_file=ADDRESSES_FILE):
     for row in reader:
         if row:
             yield row
+
+
+def desktop_notify(birthdays):
+    """
+    :param birthdays: [] of Birthday
+        List of birthday to send notification to desktop
+    :return: void
+        Sends desktop notification about the birthdays
+    """
+
+    counter = 0
+    if birthdays:
+        for b in birthdays:
+            send_notification(
+                APP_NAME,
+                str(b.birthday_str) + " >> " + b.name + " " + b.surname
+                + " notified"
+            )
+            counter += 1
+    else:
+        send_notification(APP_NAME, "No birthdays this week!")
+    send_notification(APP_NAME, "Sent " + str(counter) + " emails")
+
+
+def send_email(msg):
+    """
+    :param msg: str
+        Message to send to me
+    :return: void
+        Sends email to me with this message
+    """
+
+    gmail.send_email(
+        EMAIL_SENDER,
+        msg,
+        EMAIL_DRIVER
+    )
 
 
 def send_emails():
@@ -222,47 +177,30 @@ def send_emails():
             yield birthday
 
 
-def send_desktop_notifications(birthdays):
-    """
-    :param birthdays: [] of Birthday
-        List of birthday to send notification to desktop
-    :return: void
-        Sends desktop notification about the birthdays
-    """
-
-    counter = 0
-    if birthdays:
-        for b in birthdays:
-            app_notify(
-                str(b.birthday_str) + " >> " + b.name + " " + b.surname
-                + " notified"
-            )
-            counter += 1
-    else:
-        app_notify("No birthdays this week!")
-    app_notify(
-        "Sent " + str(counter) + " emails"
-    )
-
-
 def main():
     """
     :return: void
         Checks if today is right day to send email notifications, then sends them
     """
 
-    app_lock = AppLock()
+    app_lock = AppCronLock(lock_file=LOCK_FILE)
     if app_lock.can_proceed():
         if wait_until_internet():
-            send_desktop_notifications(
+            desktop_notify(
                 send_emails()
             )
 
             app_lock.write_lock()
         else:
-            app_notify("Cannot connect to Internet >> Aborting")
+            send_notification(
+                APP_NAME,
+                "Cannot connect to Internet >> Aborting"
+            )
     else:
-        app_notify("Already updated on " + str(app_lock.last_update))
+        send_notification(
+            APP_NAME,
+            "Already updated on " + str(app_lock.last_update)
+        )
 
 
 if __name__ == '__main__':
