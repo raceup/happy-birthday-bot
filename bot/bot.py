@@ -16,13 +16,16 @@
 # limitations under the License.
 
 
+import argparse
 import base64
 import csv
 import datetime
+import locale
 import os
 
 from hal.internet.email import gmail
 from hal.internet.email.templates import EmailTemplate
+from hal.internet.email.utils import get_email_content
 from hal.internet.utils import wait_until_internet
 from hal.streams.notify.desktop import send_notification
 from hal.time import dates
@@ -39,6 +42,7 @@ LOCK_FILE = os.path.join(DATA_FOLDER, "config.json")
 # date settings
 NOW = datetime.datetime.now()
 TODAY = NOW.strftime('%A').lower()  # day
+PRETTY_DATE_FORMAT = "%A %d %B %Y"
 
 # email settings
 APP_NAME = "Race Up | Happy Birthday"
@@ -51,6 +55,9 @@ EMAIL_SENDER = "bot@raceup.it"
 EMAIL_HEADER_FILE = os.path.join(DATA_FOLDER, "email_header.txt")
 EMAIL_CONTENT_FILE = os.path.join(DATA_FOLDER, "email_content.txt")
 EMAIL_FOOTER_FILE = os.path.join(DATA_FOLDER, "email_footer.txt")
+
+# setting locale
+locale.setlocale(locale.LC_ALL, "it_IT.UTF-8")  # italian
 
 
 class CakeRemainder(EmailTemplate):
@@ -84,10 +91,13 @@ class CakeRemainder(EmailTemplate):
             Email header
         """
 
-        date_remainder = get_next_weekday(Weekday.SATURDAY)
-        text = "<h2>Ciao " + str(self.recipient).title() + "!</h2><br>"
+        date_remainder = get_next_weekday(Weekday.SATURDAY) \
+            .strftime(PRETTY_DATE_FORMAT)
+        text = "<h2>Ciao " + str(self.recipient).title() + "!</h2>"
+        text += get_email_content(EMAIL_HEADER_FILE)
         text += "<br>Ti scrivo per ricordarti di portare almeno una torta "
-        text += " il prossimo sabato " + str(date_remainder) + " in OZ!<br>"
+        text += " la prossima volta in OZ " + str(date_remainder) + \
+                "!<br>"
         return text
 
 
@@ -174,10 +184,8 @@ def desktop_notify(birthdays):
         for b in birthdays:
             send_notification(
                 APP_NAME,
-                str(b.birthday.date().strftime("%a %b %d")) + " >> " + b.name
-                + " " +
-                b.surname
-                + " notified"
+                str(b.birthday.date().strftime(PRETTY_DATE_FORMAT)) +
+                " >> " + b.name + " " + b.surname + " notified"
             )
             counter += 1
     else:
@@ -200,17 +208,40 @@ def send_email(msg):
     )
 
 
-def send_emails():
+def send_emails(addresses):
     """
+    :param addresses: str
+        Path to file containing addresses
     :return: void
         Run bot
     """
 
-    birthdays = parse_data_file()
+    birthdays = parse_data_file(in_file=addresses)
     for b in birthdays:
         birthday = Birthday(b)  # parse raw csv data
         if birthday.send_msg():
             yield birthday
+
+
+def create_and_parse_args():
+    parser = argparse.ArgumentParser(
+        usage="-a <ADDRESSES FILE> -l <LOCK FILE>\n"
+              "-help for help and usage")
+    parser.add_argument("-a", dest="addresses",
+                        help="File containing addresses",
+                        default=ADDRESSES_FILE,
+                        required=False)
+    parser.add_argument("-l", dest="lock",
+                        help="File containing app lock and config",
+                        default=LOCK_FILE,
+                        required=False)
+
+    args = parser.parse_args()  # parse args
+
+    return {
+        "addresses": args.addresses,
+        "lock": args.lock
+    }
 
 
 def main():
@@ -219,11 +250,12 @@ def main():
         Checks if today is right day to send email notifications, then sends them
     """
 
-    app_lock = AppCronLock(lock_file=LOCK_FILE)
+    args = create_and_parse_args()
+    app_lock = AppCronLock(lock_file=args["lock"])
     if app_lock.can_proceed():
         if wait_until_internet():
             desktop_notify(
-                send_emails()
+                send_emails(args["addresses"])
             )
 
             app_lock.write_lock()

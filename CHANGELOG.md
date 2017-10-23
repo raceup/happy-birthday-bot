@@ -1,6 +1,14 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 0.1.7 - 2017-10-23
+
+### Added
+- user args parsing
+
+### Fixed
+- missing email header
+
 ## 0.1.6 - 2017-10-22
 
 ### Refactored
