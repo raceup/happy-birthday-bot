@@ -16,6 +16,7 @@
 # limitations under the License.
 
 
+import base64
 import csv
 import datetime
 import os
@@ -106,7 +107,7 @@ class Birthday(object):
         self.day = int(self.raw_dict["Day"])
         self.month = int(self.raw_dict["Month"])
         self.year = int(self.raw_dict["Year"])
-        self.birthday = datetime.datetime(self.year, self.month, self.day)
+        self.birthday = datetime.datetime(NOW.year, self.month, self.day)
         self.email = str(self.raw_dict["Email"])
 
     def send_msg(self):
@@ -140,7 +141,12 @@ class Birthday(object):
             EMAIL_FOOTER_FILE
         )
 
-        return email_template.get_mime_message()
+        message = email_template.get_mime_message()
+        message["to"] = self.email
+
+        return {
+            "raw": base64.urlsafe_b64encode(message.as_bytes()).decode()
+        }
 
 
 def parse_data_file(in_file=ADDRESSES_FILE):
@@ -168,7 +174,9 @@ def desktop_notify(birthdays):
         for b in birthdays:
             send_notification(
                 APP_NAME,
-                str(b.birthday_str) + " >> " + b.name + " " + b.surname
+                str(b.birthday.date().strftime("%a %b %d")) + " >> " + b.name
+                + " " +
+                b.surname
                 + " notified"
             )
             counter += 1
