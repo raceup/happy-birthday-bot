@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## TODO
+- add Vallese birthday
+
 ## 0.1.7 - 2017-10-23
 
 ### Added
