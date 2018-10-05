@@ -13,9 +13,9 @@ from hal.internet.email.templates import EmailTemplate
 from hal.internet.email.utils import get_email_content
 from hal.internet.utils import wait_until_internet
 from hal.streams.notify.desktop import send_notification
-from hal.time import dates
-from hal.time.cron import AppCronLock
-from hal.time.dates import get_next_weekday, Weekday
+from hal.times import dates
+from hal.times.cron import AppCronLock
+from hal.times.dates import get_next_weekday, Weekday
 
 # script settings
 THIS_FOLDER = os.path.dirname(os.path.realpath(__file__))
