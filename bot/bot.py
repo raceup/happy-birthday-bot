@@ -221,12 +221,17 @@ def create_and_parse_args():
                         help="File containing app lock and config",
                         default=LOCK_FILE,
                         required=False)
+    parser.add_argument("-f", dest="force",
+                        help="Force sending emails",
+                        default=False,
+                        required=False)
 
     args = parser.parse_args()  # parse args
 
     return {
-        "addresses": args.addresses,
-        "lock": args.lock
+        "addresses": str(args.addresses),
+        "lock": str(args.lock),
+        "force": bool(args.force)
     }
 
 
@@ -238,7 +243,8 @@ def main():
 
     args = create_and_parse_args()
     app_lock = AppCronLock(lock_file=args["lock"])
-    if app_lock.can_proceed():
+    can_proceed = app_lock.can_proceed() or args["force"]
+    if can_proceed:
         if wait_until_internet():
             desktop_notify(
                 send_emails(args["addresses"])
