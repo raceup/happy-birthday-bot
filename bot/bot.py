@@ -6,6 +6,7 @@ import argparse
 import base64
 import csv
 import datetime
+import locale
 import os
 
 from hal.internet.email import gmail
@@ -13,9 +14,8 @@ from hal.internet.email.templates import EmailTemplate
 from hal.internet.email.utils import get_email_content
 from hal.internet.utils import wait_until_internet
 from hal.streams.notify.desktop import send_notification
-from hal.times import dates
 from hal.times.cron import AppCronLock
-from hal.times.dates import get_next_weekday, Weekday
+from hal.times.dates import Day, Weekday
 
 # script settings
 THIS_FOLDER = os.path.dirname(os.path.realpath(__file__))
@@ -30,9 +30,9 @@ TODAY = NOW.strftime('%A').lower()  # day
 PRETTY_DATE_FORMAT = "%A %d %B %Y"
 
 # email settings
-APP_NAME = "Race Up | Happy Birthday"
+APP_NAME = "Race UP | Happy Birthday"
 EMAIL_DRIVER = gmail.GMailApiOAuth(
-    "Race Up Viral",
+    "Race UP Viral",
     os.path.join(OAUTH_FOLDER, "client_secret.json"),
     os.path.join(OAUTH_FOLDER, "gmail.json")
 ).create_driver()
@@ -43,11 +43,11 @@ EMAIL_FOOTER_FILE = os.path.join(DATA_FOLDER, "email_footer.txt")
 
 
 # setting locale to get days in native language
-# locale.setlocale(locale.LC_ALL, "it_IT.UTF-8")  # italian
+locale.setlocale(locale.LC_ALL, "it_IT.UTF-8")  # italian
 
 
 class CakeRemainder(EmailTemplate):
-    """ Email template to notify Race Up members to bring a slice of cake
+    """ Email template to notify Race UP members to bring a slice of cake
     on weekly saturday meetings """
 
     def __init__(self, recipient, content_file, footer_file, extra_args=None):
@@ -65,7 +65,7 @@ class CakeRemainder(EmailTemplate):
         EmailTemplate.__init__(
             self,
             recipient,
-            "Race Up | Il bot delle torte",
+            "URGENTISSIMO: Il bot delle torte",
             content_file,
             footer_file,
             extra_args=extra_args
@@ -77,13 +77,14 @@ class CakeRemainder(EmailTemplate):
             Email header
         """
 
-        date_remainder = get_next_weekday(Weekday.SATURDAY) \
+        date_remainder = Weekday.get_next(Weekday.SATURDAY) \
             .strftime(PRETTY_DATE_FORMAT)
         text = "<h2>Ciao " + str(self.recipient).title() + "!</h2>"
         text += get_email_content(EMAIL_HEADER_FILE)
         text += "<br>Ti scrivo per ricordarti di portare almeno una torta "
-        text += " la prossima volta in OZ " + str(date_remainder) + \
-                "!<br>"
+        text += " la prossima volta in OZ <b>" + str(date_remainder) + \
+                "</b>!<br>"
+
         return text
 
 
@@ -113,13 +114,10 @@ class Birthday(object):
             Returns true iff sent message
         """
 
-        if dates.is_in_this_week(self.birthday):
-            try:
-                send_email(self.get_msg())
-                return True
-            except Exception as e:
-                print("Cannot send email because\n", str(e), "\n")
-                return False
+        is_birthday_due = Day(self.birthday).is_in_this_week()
+        if is_birthday_due:
+            send_email(self.get_msg())
+            return True
 
         return False
 
@@ -129,7 +127,7 @@ class Birthday(object):
             Personalized message to notify of birthday
         """
 
-        name_surname = self.name.strip() + " " + self.surname.strip()
+        name_surname = self.name.strip()
         name_surname = name_surname.title()
         email_template = CakeRemainder(
             name_surname,
@@ -224,7 +222,8 @@ def create_and_parse_args():
     parser.add_argument("-f", dest="force",
                         help="Force sending emails",
                         default=False,
-                        required=False)
+                        required=False,
+                        action='store_true')
 
     args = parser.parse_args()  # parse args
 
@@ -245,7 +244,10 @@ def main():
     app_lock = AppCronLock(lock_file=args["lock"])
     can_proceed = app_lock.can_proceed() or args["force"]
     if can_proceed:
+        print("Waiting for internet connection...")
         if wait_until_internet():
+            print("...connected!")
+
             desktop_notify(
                 send_emails(args["addresses"])
             )
