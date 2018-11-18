@@ -1,6 +1,7 @@
-hbb/.user_credentials/*
+hbb/.user_credentials*
 data/
-
+.idea/
+!**/.user_credentials/
 
 ### PyCharm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm

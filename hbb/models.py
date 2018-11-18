@@ -83,7 +83,7 @@ class CakeWarning(EmailTemplate):
         self.this_week_birthdays = this_week_birthdays
 
     def get_birthdays_list(self):
-        text = "In particolare ..."
+        text = "In particolare "
         text += "\n<ul>"
 
         for birthday in self.this_week_birthdays:
@@ -103,7 +103,7 @@ class CakeWarning(EmailTemplate):
         text = "<h2>Ciao " + str(self.recipient).title() + "!</h2>"
         text += get_email_content(EMAIL_TEMPLATES["remind"]["header"])
         text += "<br>Ti scrivo per controllare le torte la prossima volta in " \
-                "OZ <b>" + str(date_remainder) + "</b>!</br></br>"
+                "OZ <b>" + str(date_remainder) + "</b> </br></br>"
         text += self.get_birthdays_list() + "</br>"
         return text
 
@@ -127,7 +127,7 @@ class Birthday(object):
 
     def __str__(self):
         return self.name + " " + self.surname + " compie gli anni " + \
-               self.birthday.strftime(PRETTY_DATE_FORMAT)
+               self.birthday.strftime(PRETTY_BIRTHDAY_FORMAT)
 
     def get_summary(self):
         return str(self.birthday.date().strftime(PRETTY_BIRTHDAY_FORMAT)) + \
