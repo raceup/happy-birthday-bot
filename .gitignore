@@ -1,5 +1,5 @@
-bot/.user_credentials/*
-bot/data
+hbb/.user_credentials/*
+data/
 
 
 ### PyCharm ###
